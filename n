@@ -1,0 +1,579 @@
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class VillageSystem : MonoBehaviour
+{
+
+    #region System
+    bool IsPlayer;
+    #endregion
+
+    #region Population
+    public static bool StatusPopulation;
+
+
+    GameObject Player;
+    #endregion
+
+    #region Trade
+    int[] Resource = new int[5];
+    int[] MaxResource = new int[5];
+
+    int Population;
+    int Food; //4m
+    int Wood; //2m
+    int Stone; //3m
+    int Metal; //5m
+
+    int MaxPopulation;
+    int MaxFood;
+    int MaxWood;
+    int MaxStone;
+    int MaxMetal;
+    #endregion
+
+    #region Build
+    int[] Build = new int[29]; 
+    //<100
+    int BHouse;//0
+    int BStorageFood;//1
+    int BStorageWood;//2
+    int BStorageStone;//3
+    int BStorageMetal;//4
+    int BMargin;//5
+    int BQuarry;//6
+    int BMine;//7
+    int BBakery;//8
+    int BSawmill;//9
+    //>100
+    int BMill;//10
+    int BForge;//11
+    int BChapel;//12
+    int BCattle;//13
+    int BHop;//14
+    int BBrewery;//15
+    int BTavern;//16
+    //>500
+    int Flax; //17
+    int Beehive; //18
+    int Market; //19
+    int Furniture; //20
+    int Jewellery; //21
+    int Weaving; //22
+    int Candle; //23
+    //>1000
+    int Academy; //24
+    int Wall; //25
+    int Weapons; //26
+    int Barracks; //27
+    int Mews; //28
+
+    #endregion
+
+    #region Constraction
+    int[,] CostBuild = new int[29, 5];
+    int[] TimeConstract = new int[29];
+
+    float[] TimeConstraction = new float[29];
+    bool[] ArrayConstract = new bool[29];
+    #endregion
+
+    int CountIncreace;
+
+    public int Specialize;
+
+    #region GUI
+    public GUIStyle Style;
+    public GUIStyle ButStyle;
+    [SerializeField]
+    Texture2D BackInterface;
+
+    bool InfoBuild;
+    int NumBuild;
+
+    string[] NameBuild = new string[29];
+
+    Rect[] RectBuild = new Rect[29];
+    int CountDraw;
+
+    public Vector2 pos;
+    public Vector2 size;
+    public Texture2D BackBuild;
+    public Texture2D[] ImageBild;
+    #endregion
+
+    // Use this for initialization
+    void Start()
+    {
+        _NameBuild();
+        Specialize = Random.Range(1, 5);
+        CountIncreace = 2;
+        CountDraw = 9;
+        _StartResource();
+
+        Player = GameObject.FindGameObjectWithTag("Player");
+        NumBuild = 1000;
+      
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+     
+        _RectBuild();
+        _Extraction();
+        _Population();
+        _Limitations();
+        _Constract();
+        if (IsPlayer)
+        {
+
+        }
+        else
+        {
+            //_AI();
+        }
+        #region TEST
+        if (Input.GetKeyDown(KeyCode.M))
+        {
+            Resource[0] += 1000;
+            Resource[1] += 1000; //4m
+            Resource[2] += 1000; //2m
+            Resource[3] += 1000; //3m
+            Resource[4] += 1000; //5m
+        }
+        if (Input.GetKeyDown(KeyCode.N))
+        {
+            BHouse++;
+            BStorageFood++;
+            BStorageWood++;
+            BStorageStone++;
+            BStorageMetal++;
+            BMargin++;
+            BQuarry++;
+            BMine++;
+            BBakery++;
+            BSawmill++;
+            BMill++;
+        }
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            IsPlayer = !IsPlayer;
+        }
+        #endregion
+    }
+    void OnGUI()
+    {
+        print(Specialize);
+      
+        GUI.Label(new Rect(0, 50, 300, 50), "P" + Resource[0] + "/" + MaxResource[0] + "/" + Build[0], Style);
+         //GUI.DrawTexture(RectBuild[21], BackBuild);
+        if (Village.InVillage)
+        {
+            if (Vector3.Distance(transform.position, Player.transform.position) < 2)
+            {
+                _Draw();
+            }
+        }
+    }
+
+    float TimePopulation;
+    void _Population()
+    {
+        if (Food <= 0)
+        {
+            Food = 0;
+            StatusPopulation = false;
+        }
+        else
+        {
+            StatusPopulation = true;
+        }
+        TimePopulation += Time.deltaTime;
+        if (TimePopulation >= Random.Range(180, 300))
+        {
+            if (StatusPopulation)
+            {
+                Resource[0] += Resource[0] / 25;
+            }
+            else
+            {
+                Resource[0] -= Resource[0] / 100;
+            }
+            TimePopulation = 0;
+        }
+    }
+
+    float TimeExtraction;
+    void _Extraction()
+    {
+        TimeExtraction += Time.deltaTime;
+
+        if (TimeExtraction >= Random.Range(12, 18))//Random.Range(120, 180))
+        {
+            for (int index = 1; index < Resource.Length; index++)
+            {
+                if (index == Specialize)
+                {
+                    if (MaxResource[index] >= (Resource[index] + (Resource[0] / 2) * CountIncreace))
+                    {
+                        Resource[index] += (Resource[0] / 2) * CountIncreace;
+                    }
+                    else
+                    {
+                        if (MaxResource[index] > Resource[index])
+                        {
+                            Resource[index] += (Resource[index] + ((Resource[0] / 2) * CountIncreace)) - MaxResource[index];
+                        }
+                    }
+                }
+                else
+                {
+                    if (MaxResource[index] >= (Resource[index] + (Resource[0] / 12) * CountIncreace))
+                    {
+                        Resource[index] += (Resource[0] / 12) * CountIncreace;
+                    }
+                    else
+                    {
+                        if (MaxResource[index] > Resource[index])
+                        {
+                            Resource[index] += (Resource[index] + ((Resource[0] / 12) * CountIncreace)) - MaxResource[index];
+                        }
+                    }
+                }
+            }
+            if (MaxResource[0] >= Resource[0] + (Resource[0] / 20))
+            {
+                Resource[0] += Resource[0] / 20;
+            }
+            else
+            {
+                if (MaxResource[0] > Resource[0])
+                {
+                    Resource[0] += (Resource[0] + (Resource[0] / 20)) - MaxResource[0];
+                }
+            }
+            TimeExtraction = 0;
+        }
+    }
+
+    void _StartResource()
+    {
+        switch (Specialize)
+        {
+            case 1:
+                Resource[0] = Random.Range(30, 120);
+                Resource[1] = Random.Range(3 * Resource[0], 4 * Resource[0]);
+                Resource[2] = Random.Range(1 * Resource[0], 2 * Resource[0]);
+                Resource[3] = Random.Range(1 * Resource[0], 2 * Resource[0]);
+                Resource[4] = Random.Range(1 * Resource[0], 2 * Resource[0]);
+                break;
+            case 2:
+                Resource[0] = Random.Range(20, 100);
+                Resource[1] = Random.Range(1 * Resource[0], 2 * Resource[0]);
+                Resource[2] = Random.Range(3 * Resource[0], 4 * Resource[0]);
+                Resource[3] = Random.Range(1 * Resource[0], 2 * Resource[0]);
+                Resource[4] = Random.Range(1 * Resource[0], 2 * Resource[0]);
+                break;
+            case 3:
+                Resource[0] = Random.Range(20, 90);
+                Resource[1] = Random.Range(1 * Resource[0], 2 * Resource[0]);
+                Resource[2] = Random.Range(1 * Resource[0], 2 * Resource[0]);
+                Resource[3] = Random.Range(3 * Resource[0], 4 * Resource[0]);
+                Resource[4] = Random.Range(1 * Resource[0], 2 * Resource[0]);
+                break;
+            case 4:
+                Resource[0] = Random.Range(15, 80);
+                Resource[1] = Random.Range(1 * Resource[0], 2 * Resource[0]);
+                Resource[2] = Random.Range(1 * Resource[0], 2 * Resource[0]);
+                Resource[3] = Random.Range(2 * Resource[0], 3 * Resource[0]);
+                Resource[4] = Random.Range(3 * Resource[0], 4 * Resource[0]);
+                break;
+        }
+        Build[0] = _LimiterPopulation(Resource[0]);
+        Build[1] = _LimiterResources(Resource[1]);
+        Build[2] = _LimiterResources(Resource[2]);
+        Build[3] = _LimiterResources(Resource[3]);
+        Build[4] = _LimiterResources(Resource[4]);
+
+        #region CostBuild
+        for (int index = 0; index < CostBuild.Length / 5; index++)
+        {
+            CostBuild[index, 0] = 0;//People
+            CostBuild[index, 1] = 1;//Food
+            CostBuild[index, 2] = 40;//Wood
+            CostBuild[index, 3] = 50;//Stone
+            CostBuild[index, 4] = 12;//Metal
+        }
+     
+        #endregion
+        #region TimeConstract
+
+        TimeConstract[0] = 120;
+        for (int index = 1; index < TimeConstract.Length; index++)
+        {
+            TimeConstract[index] = 60;
+        }
+       
+        #endregion
+    }
+
+    void _Limitations()
+    {
+        MaxResource[0] = BHouse * 10;
+        MaxResource[1] = BStorageFood * 100;
+        MaxResource[2] = BStorageWood * 100;
+        MaxResource[3] = BStorageStone * 100;
+        MaxResource[4] = BStorageMetal * 100;
+        for (int index = 0; index < Resource.Length; index++)
+        {
+            if (Resource[index] > MaxResource[index])
+            {
+                Resource[index] = MaxResource[index];
+            }
+        }
+
+
+
+        if (Resource[0] > 100)
+        {
+            CountDraw = 17;
+        }
+        if (Resource[0] > 500)
+        {
+            CountDraw = 29;
+        }
+    }
+
+    int _LimiterPopulation(int count)
+    {
+        int value = 1;
+        while (value < (count / 10))
+        {
+            value++;
+        }
+        value++;
+        return value;
+    }
+    int _LimiterResources(int count)
+    {
+        int value = 1;
+        while (value < (count / 100))
+        {
+            value++;
+        }
+        value++;
+        return value;
+    }
+
+    void _Construction(int index)
+    {
+        Build[index]++;
+    }
+
+    void _TimeConstraction(int Index)
+    {
+        if (TimeConstraction[Index] >= TimeConstract[Index])
+        {
+            _Construction(Index);
+            ArrayConstract[Index] = false;
+            TimeConstraction[Index] = 0;
+        }
+
+    }
+
+    void _AI()
+    {
+        for (int index = 0; index < Resource.Length; index++)
+        {
+            if (Resource[index] >= MaxResource[index] - (MaxResource[index] / 10))
+            {
+                _Resource(index);
+            }
+        }
+    }
+
+    void _Resource(int Index)
+    {
+        if (Resource[1] >= CostBuild[Index, 1] & Resource[2] >= CostBuild[Index, 2] & Resource[3] >= CostBuild[Index, 3] & Resource[4] >= CostBuild[Index, 4])
+        {
+            Resource[1] -= CostBuild[Index, 1];
+            Resource[2] -= CostBuild[Index, 2];
+            Resource[3] -= CostBuild[Index, 3];
+            Resource[4] -= CostBuild[Index, 4];
+            CostBuild[Index, 1] += (CostBuild[Index, 1] * 30) / 100;
+            CostBuild[Index, 2] += (CostBuild[Index, 2] * 30) / 100;
+            CostBuild[Index, 3] += (CostBuild[Index, 3] * 30) / 100;
+            CostBuild[Index, 4] += (CostBuild[Index, 4] * 30) / 100;
+            //CostBuild[index, 5] += (CostBuild[index, 5] * 30) / 100;
+            ArrayConstract[Index] = true;
+        }
+    }
+
+    void _Constract()
+    {
+        for (int index = 0; index < ArrayConstract.Length; index++)
+        {
+            if (ArrayConstract[index])
+            {
+                TimeConstraction[index] += Time.deltaTime;
+                _TimeConstraction(index);
+            }
+        }
+    }
+    #region GUI
+    void _Draw()
+    {
+        _InterfaceVillage();
+        GUI.Label(new Rect(0, 0, 300, 50), "Te" + TimeExtraction, Style);
+        GUI.Label(new Rect(0, 50, 300, 50), "P" + Resource[0] + "/" + MaxResource[0] + "/" + Build[0], Style);
+        GUI.Label(new Rect(0, 150, 300, 50), "F" + Resource[1] + "/" + MaxResource[1] + "/" + Build[1], Style);
+        GUI.Label(new Rect(0, 250, 300, 50), "W" + Resource[2] + "/" + MaxResource[2] + "/" + Build[2], Style);
+        GUI.Label(new Rect(0, 350, 300, 50), "S" + Resource[3] + "/" + MaxResource[3] + "/" + Build[3], Style);
+        GUI.Label(new Rect(0, 450, 300, 50), "M" + Resource[4] + "/" + MaxResource[4] + "/" + Build[4], Style);
+
+        GUI.Label(new Rect(0, 500, 300, 50), "BMargin" + Build[5], Style);
+        GUI.Label(new Rect(0, 550, 300, 50), "BQuarry" + Build[6], Style);
+        GUI.Label(new Rect(0, 600, 300, 50), "BMine" + Build[7], Style);
+        GUI.Label(new Rect(0, 650, 300, 50), "BBakery" + Build[8], Style);
+        GUI.Label(new Rect(0, 700, 300, 50), "BSawmill" + Build[9], Style);
+        GUI.Label(new Rect(0, 750, 300, 50), "BMill" + Build[10], Style);
+        GUI.Label(new Rect(600, 0, 300, 50), "Tc" + TimeConstraction, Style);
+
+        if (IsPlayer & !InfoBuild)
+        {
+            for (int Index = 0; Index < CountDraw; Index++)
+            {
+                if (!ArrayConstract[Index])
+                {
+                    if (GUI.Button(RectBuild[Index], NameBuild[Index], ButStyle))
+                    {
+                        InfoBuild = true;
+                        NumBuild = Index;
+                    }
+                }
+                else
+                {
+                    GUI.Label(RectBuild[Index], NameBuild[Index] + " " + BHouse + " [" + TimeConstraction[Index].ToString("#") + "/" + TimeConstract[Index].ToString("#.#") + "]", ButStyle);
+                }
+            }
+        }
+        if (InfoBuild)
+        {
+            _DrawInfoBuild(NumBuild);
+        }
+    }
+
+    void _DrawInfoBuild(int Index)
+    {
+        GUI.DrawTexture(new Rect(Screen.width / 8, Screen.height / 16, Screen.width / 1.5F, Screen.height / 1.2F), BackBuild);
+        GUI.DrawTexture(new Rect(Screen.width / 7, Screen.height / 11, Screen.width / 4, Screen.height / 2), BackBuild);
+        //GUI.DrawTexture(new Rect(Screen.width / pos.x, Screen.height / pos.y, Screen.width / size.x, Screen.height / size.y), BackBuild);
+        GUI.Label(new Rect(Screen.width / 2.5F, Screen.height / 11, Screen.width / 6.4F, Screen.height / 21.6F), "Food: " + Resource[1] + "/" + CostBuild[Index, 1], Style);
+        GUI.Label(new Rect(Screen.width / 2.5F, Screen.height / 7.4F, Screen.width / 6.4F, Screen.height / 21.6F), "Wood: " + Resource[2] + "/" + CostBuild[Index, 2], Style);
+        GUI.Label(new Rect(Screen.width / 2.5F, Screen.height / 5.6F, Screen.width / 6.4F, Screen.height / 21.6F), "Stone: " + Resource[3] + "/" + CostBuild[Index, 3], Style);
+        GUI.Label(new Rect(Screen.width / 2.5F, Screen.height / 4.6F, Screen.width / 6.4F, Screen.height / 21.6F), "Metal: " + Resource[4] + "/" + CostBuild[Index, 4], Style);
+        GUI.Label(new Rect(Screen.width / 2.5F, Screen.height / 3.9F, Screen.width / 6.4F, Screen.height / 21.6F), "Time: " + TimeConstract[Index], Style);
+
+        if (GUI.Button(new Rect(Screen.width / 1.6F, Screen.height / 1.3F, Screen.width / 8, Screen.height / 10), "Accept", ButStyle))
+        {
+            _Resource(Index);
+            InfoBuild = false;
+        }
+        if (GUI.Button(new Rect(Screen.width / 6, Screen.height / 1.3F, Screen.width / 8, Screen.height / 10), "Back", ButStyle))
+        {
+            InfoBuild = false;
+            NumBuild = 1000;
+        }
+    }
+
+    void _NameBuild()
+    {
+        NameBuild[0] = "House";
+        NameBuild[1] = "StorageFood ";
+       NameBuild[2] = "StorageWood ";
+        NameBuild[3] = "StorageStone ";
+        NameBuild[4] = "StorageMetal ";
+        NameBuild[5] = "Margin ";
+        NameBuild[6] = "Quarry ";
+        NameBuild[7] = "Mine ";
+        NameBuild[8] = "Bakery ";
+        NameBuild[9] = "Sawmill ";
+        NameBuild[10] = "Mill ";
+        NameBuild[11] = "Forge ";
+        NameBuild[12] = "Chapel ";
+        NameBuild[13] = "Cattle ";
+        NameBuild[14] = "Hop ";
+        NameBuild[15] = "Brewery ";
+        NameBuild[16] = "Tavern ";
+
+        NameBuild[17] = "Flax ";
+        NameBuild[18] = "Beehive ";
+        NameBuild[19] = "Market ";
+        NameBuild[20] = "Furniture ";
+        NameBuild[21] = "Jewellery ";
+        NameBuild[22] = "Weaving ";
+        NameBuild[23] = "Candle ";
+        NameBuild[24] = "Academy ";
+        NameBuild[25] = "Wall ";
+        NameBuild[26] = "Weapons ";
+        NameBuild[27] = "Barracks ";
+        NameBuild[28] = "Mews ";
+    }
+
+    void _InterfaceVillage()
+    {
+        GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), BackInterface);
+        GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), BackInterface);
+        GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), BackInterface);
+        GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), BackInterface);
+
+        if (GUI.Button(new Rect(Screen.width - 150, Screen.height / 60, 150, 150), "EX"))
+        {
+            transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z + 5);
+            Village.InVillage = false;
+        }
+    }
+    #endregion
+
+    void _RectBuild()
+    {
+        Style.fontSize = Screen.width / 48;
+        ButStyle.fontSize = Screen.width / 48;
+
+        RectBuild[0] = new Rect(Screen.width / 3.2F, Screen.height / 7.2F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[1] = new Rect(Screen.width / 3.2F, Screen.height / 5.4F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[2] = new Rect(Screen.width / 3.2F, Screen.height / 4.32F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[3] = new Rect(Screen.width / 3.2F, Screen.height / 3.6F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[4] = new Rect(Screen.width / 3.2F, Screen.height / 3.09F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[5] = new Rect(Screen.width / 3.2F, Screen.height / 2.7F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[6] = new Rect(Screen.width / 3.2F, Screen.height / 2.4F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[7] = new Rect(Screen.width / 3.2F, Screen.height / 2.16F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[8] = new Rect(Screen.width / 3.2F, Screen.height / 1.965F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[9] = new Rect(Screen.width / 3.2F, Screen.height / 1.8F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[10] = new Rect(Screen.width / 3.2F, Screen.height / 1.66F, Screen.width / 6.4F, Screen.height / 21.6F);
+       // RectBuild[21] = new Rect(Screen.width / pos.x, Screen.height / pos.y, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[11] = new Rect(Screen.width / 3.2F, Screen.height / 1.54F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[12] = new Rect(Screen.width / 3.2F, Screen.height / 1.44F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[13] = new Rect(Screen.width / 3.2F, Screen.height / 1.35F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[14] = new Rect(Screen.width / 3.2F, Screen.height / 1.27F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[15] = new Rect(Screen.width / 3.2F, Screen.height / 1.2F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[16] = new Rect(Screen.width / 3.2F, Screen.height / 1.136F, Screen.width / 6.4F, Screen.height / 21.6F);
+
+        RectBuild[17] = new Rect(Screen.width / 2, Screen.height / 7.2F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[18] = new Rect(Screen.width / 2, Screen.height / 5.4F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[19] = new Rect(Screen.width / 2, Screen.height / 4.32F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[20] = new Rect(Screen.width / 2, Screen.height / 3.6F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[21] = new Rect(Screen.width / 2, Screen.height / 3.09F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[22] = new Rect(Screen.width / 2, Screen.height / 2.7F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[23] = new Rect(Screen.width / 2, Screen.height / 2.4F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[24] = new Rect(Screen.width / 2, Screen.height / 2.16F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[25] = new Rect(Screen.width / 2, Screen.height / 1.965F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[26] = new Rect(Screen.width / 2, Screen.height / 1.8F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[27] = new Rect(Screen.width / 2, Screen.height / 1.66F, Screen.width / 6.4F, Screen.height / 21.6F);
+        RectBuild[28] = new Rect(Screen.width / 2, Screen.height / 1.54F, Screen.width / 6.4F, Screen.height / 21.6F);
+    }
+
+}
